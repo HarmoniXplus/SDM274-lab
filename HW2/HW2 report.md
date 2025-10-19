@@ -45,6 +45,43 @@ The specific aims of this project are as follows:
 
 ### **3. Design & Methodology**
 
+**3.0. Theoretical Background**
+
+**Logistic Regression Overview:**
+Logistic regression is a statistical method for binary classification that models the probability of an event occurring. Unlike linear regression which outputs continuous values, logistic regression outputs probabilities between 0 and 1 using the sigmoid function.
+
+**Mathematical Foundation:**
+
+1. **Sigmoid Function**: The core of logistic regression is the sigmoid (logistic) function that maps any real number to a value between 0 and 1:
+
+   $$\sigma(z) = \frac{1}{1 + e^{-z}}$$
+
+   where $z = w_0 + w_1x_1 + w_2x_2 + \cdots + w_nx_n = \mathbf{w}^T\mathbf{x}$
+
+2. **Hypothesis Function**: The predicted probability is given by:
+
+   $$h(\mathbf{x}) = \sigma(\mathbf{w}^T\mathbf{x}) = \frac{1}{1 + e^{-\mathbf{w}^T\mathbf{x}}}$$
+
+3. **Cross-Entropy Loss Function**: For binary classification, we use the cross-entropy loss:
+
+   $$J(\mathbf{w}) = -\frac{1}{m}\sum_{i=1}^{m}[y^{(i)}\log(h(\mathbf{x}^{(i)})) + (1-y^{(i)})\log(1-h(\mathbf{x}^{(i)}))]$$
+
+   where $m$ is the number of training examples, $y^{(i)}$ is the true label, and $h(\mathbf{x}^{(i)})$ is the predicted probability.
+
+4. **Gradient of the Loss**: The gradient of the cross-entropy loss with respect to weights is:
+
+   $$\nabla J(\mathbf{w}) = \frac{1}{m}\mathbf{X}^T(\mathbf{h}(\mathbf{x}) - \mathbf{y})$$
+
+5. **Weight Update Rule**: Using gradient descent, weights are updated as:
+
+   $$\mathbf{w} = \mathbf{w} - \alpha\nabla J(\mathbf{w})$$
+
+   where $\alpha$ is the learning rate.
+
+**Optimization Methods:**
+- **Mini-batch Gradient Descent**: Updates weights using a subset of training data (batch size > 1)
+- **Stochastic Gradient Descent**: Updates weights using one training example at a time (batch size = 1)
+
 **3.1. System Architecture / Overall Design**
 The project follows a standard machine learning workflow, which can be broken down into several sequential stages:
 
@@ -58,7 +95,7 @@ The project follows a standard machine learning workflow, which can be broken do
 **3.2. Implementation Details**
 The core of the project is the `LogisticRegression.py` script. Key components are highlighted below.
 
-**Data Loading:** The `load_data` function handles the initial data preparation.
+- **Data Loading:** The `load_data` function handles the initial data preparation.
 
 ```python
 def load_data(file_path):
@@ -70,7 +107,7 @@ def load_data(file_path):
     return X, y.reshape(-1, 1)
 ```
 
-**Data Splitting:** The `split_data` function randomly shuffles the dataset and splits it into training and test sets with a 7:3 ratio as required by the assignment.
+- **Data Splitting:** The `split_data` function randomly shuffles the dataset and splits it into training and test sets with a 7:3 ratio as required by the assignment.
 
 ```python
 def split_data(X, y, test_size=0.3):
@@ -82,11 +119,14 @@ def split_data(X, y, test_size=0.3):
     return X_train, X_test, y_train, y_test
 ```
 
-**Model Training:** The `fit` method orchestrates the training process, iterating through epochs and data batches. The `gradient` method computes the gradient of the cross-entropy loss, which is the core of the learning process. The learning rate is set to 0.0001 and the model trains for 5000 epochs.
+- **Model Training:** The `fit` method orchestrates the training process, implementing the mathematical formulas described in the theoretical background. The `gradient` method computes the gradient of the cross-entropy loss using the formula $\nabla J(\mathbf{w}) = \frac{1}{m}\mathbf{X}^T(\mathbf{h}(\mathbf{x}) - \mathbf{y})$, which is the core of the learning process. The learning rate $\alpha$ is set to 0.0001 and the model trains for 5000 epochs.
 
 ```python
 class LogisticRegression:
-    # ...
+    def sigmoid(self, z):
+        z = np.clip(z, -500, 500)  # Prevent overflow
+        return 1 / (1 + np.exp(-z))  # Implements σ(z) = 1/(1+e^(-z))
+    
     def fit(self, X, y, update_method='mini_batch'):
         self.init_weights(X.shape[1])
       
@@ -94,17 +134,37 @@ class LogisticRegression:
             if update_method == 'stochastic':
                 self.batch_size = 1
             for X_batch, y_batch in self.iter_mini_batch(X, y): 
-                y_pred = self.predict(X_batch)
+                y_pred = self.predict(X_batch)  # Implements h(x) = σ(w^T x)
                 gradient = self.gradient(X_batch, y_batch, y_pred)
-                self.weights -= self.lr * gradient
+                self.weights -= self.lr * gradient  # Implements w = w - α∇J(w)
         return self.weights
 
     def gradient(self, X, y, y_pred):
         X_ = self.preprocess(X)
-        return X_.T @ (y_pred - y.reshape(y_pred.shape))/X.shape[0]
+        return X_.T @ (y_pred - y.reshape(y_pred.shape))/X.shape[0]  # Implements ∇J(w) = (1/m)X^T(h(x) - y)
 ```
 
-**Model Evaluation:** The `evaluate` function takes the true labels and the model's predictions and calculates the four key performance metrics.
+- **Model Evaluation:** The `evaluate` function takes the true labels and the model's predictions and calculates the four key performance metrics using the following mathematical formulas:
+
+​	**Mathematical Definitions:**
+
+1. **Accuracy**: The proportion of correctly classified samples:
+   $$\text{Accuracy} = \frac{TP + TN}{TP + TN + FP + FN}$$
+
+2. **Precision**: The proportion of positive predictions that are actually positive:
+   $$\text{Precision} = \frac{TP}{TP + FP}$$
+
+3. **Recall**: The proportion of actual positives that are correctly identified:
+   $$\text{Recall} = \frac{TP}{TP + FN}$$
+
+4. **F1 Score**: The harmonic mean of precision and recall:
+   $$\text{F1 Score} = 2 \times \frac{\text{Precision} \times \text{Recall}}{\text{Precision} + \text{Recall}}$$
+
+Where:
+- $TP$ = True Positives (correctly predicted positive cases)
+- $TN$ = True Negatives (correctly predicted negative cases)  
+- $FP$ = False Positives (incorrectly predicted positive cases)
+- $FN$ = False Negatives (incorrectly predicted negative cases)
 
 ```python
 def evaluate(y_true, y_pred):
