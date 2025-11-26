@@ -59,6 +59,7 @@ def load_data(file_path):
     return X, y.reshape(-1, 1)
 
 def split_data(X, y, test_size=0.3):
+    np.random.seed(42)
     indice = list(range(X.shape[0]))
     np.random.shuffle(indice)
     split_idx = int(X.shape[0] * (1 - test_size))
@@ -79,7 +80,7 @@ if __name__ == '__main__':
     X_train, X_test, y_train, y_test = split_data(X, y, test_size=0.3)
 
     # Mini-batch training
-    model_MBGD = LogisticRegression(learning_rate=0.0001, epoch=5000, batch_size=16)
+    model_MBGD = LogisticRegression(learning_rate=0.00025, epoch=5000, batch_size=16)
     model_MBGD.fit(X_train, y_train, update_method='mini_batch')
     y_MBGD_pred = model_MBGD.predict(X_test)
 
@@ -91,7 +92,7 @@ if __name__ == '__main__':
     print(f"  F1 Score: {F1_score:.4f}")
 
     # Stochastic training
-    model_SGD = LogisticRegression(learning_rate=0.0001, epoch=5000)
+    model_SGD = LogisticRegression(learning_rate=0.00025, epoch=5000)
     model_SGD.fit(X_train, y_train, update_method='stochastic')
     y_SGD_pred = model_SGD.predict(X_test)
     
